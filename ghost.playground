@@ -1,0 +1,280 @@
+import UIKit
+
+//define Card
+struct Card {
+    let cardType:String
+    let color:String
+    let point:Int
+    var  isUser:Bool=false //玩家 或 電腦
+
+}
+
+
+var cardtype=["梅花","黑桃","方塊","紅心"]
+var gameOver=false
+var Cards  =  [Card]()//牌組
+var Cards_User=[Card]()//USER牌組
+var Cards_PC=[Card]()//PC牌組
+
+var addCnt=0
+print("========產生52張牌組===========")
+for k in 0...3{
+
+
+for i in 1...13 {
+    
+    if  k>1 {
+        Cards.append(Card(cardType: cardtype[k],color: "Red", point: i,isUser:false ))
+    }
+    else
+    {
+        Cards.append(Card(cardType: cardtype[k],color: "Black", point: i,isUser:false  ))
+    }
+    
+   // print(Cards[addCnt])
+    addCnt+=1
+ }
+}
+
+print("========加入鬼牌===========")
+Cards.append(Card(cardType: "鬼牌",color: "Black", point: 0,isUser:false  ))
+//Cards[52] //加入鬼牌
+
+
+card_shuffle() //洗牌
+card_dispatch()//發牌
+
+
+
+Cards_PC=card_filter(Cards_PC) //玩家 牌組 濾掉pair牌組
+print("=========電腦牌組=========")
+for PCcard in Cards_PC{
+ print(" \(PCcard)")
+}
+
+
+print("=========玩家牌組=========")
+Cards_User=card_filter(Cards_User) //玩家 牌組 濾掉pair牌組
+for Ucard in Cards_User{
+   print(" \(Ucard)")
+    
+}
+
+
+
+
+var nowPlayer="PC2PLAYER"
+var isPlayer:Bool=false
+
+
+
+if(Cards_PC.count>Cards_User.count){
+   nowPlayer="PC2PLAYER"
+    isPlayer=false
+}
+else{
+    nowPlayer="PLAYER2PC"
+    isPlayer=true
+}
+
+var RoundCnt=0
+while  gameOver == false {
+    RoundCnt+=1
+    
+    var range = 0...1
+    var number = Int.random(in: range)
+   
+    if isPlayer==false{ //ＰＣ抽一張
+       range=0...(Cards_PC.count-1)
+       number = Int.random(in: range)
+       nowPlayer="PC2PLAYER"
+    }
+    else{
+        range=0...(Cards_User.count-1)
+        number = Int.random(in: range)
+        nowPlayer="PLAYER2PC"
+    }
+    
+    print(" 第 \(RoundCnt)  回合 : 現在輪到  \(nowPlayer)")
+  cardsExchange(chgIndex:number,changWay:nowPlayer)
+  isPlayer.toggle()
+ 
+}
+
+//======================func========================
+//洗牌
+func card_shuffle(){
+print("=====洗牌 func====")
+Cards.shuffle()
+}
+
+//發牌
+func card_dispatch(){
+print("=====53張牌 發給  電腦跟玩家   func====")
+    var  isUser:Bool=true
+    
+    for i in 0...Cards.count-1{
+        
+        if isUser  == true {
+            Cards[i].isUser=true
+            Cards_User.append(Cards[i])
+            isUser=false
+        }
+        else
+        {
+            Cards[i].isUser=false
+            Cards_PC.append(Cards[i])
+            isUser=true
+        }
+
+    }
+    
+}
+
+//過濾牌組
+func card_filter(_ filterCard:[Card])->[Card]{
+print("=====過濾牌組 func====")
+    if filterCard.count < 2 {
+        return filterCard
+    }
+
+    var fooCards=filterCard
+    var Del_2Card=[Int]()
+    for i in 1...13{
+      //  print(i)
+        let countPair = filterCard.filter({$0.point == i}).count
+        
+        switch countPair {
+        case 2:
+            fooCards=fooCards.filter({$0.point != i})
+        case 3:
+            Del_2Card.append(i)
+        case 4:
+            fooCards=fooCards.filter({$0.point != i})
+        default:
+            break
+        }
+
+    }
+    
+    if Del_2Card.count > 0  && fooCards.count > 0 {
+        for j in 0...Del_2Card.count-1{
+            
+            //刪掉兩張卡片
+            var del2Cnt:Int=0
+            for k in 0...fooCards.count-1{
+               
+                if fooCards[k].point == Del_2Card[j]
+                {
+                    fooCards.remove(at:k)
+                    del2Cnt+=1
+                    if (del2Cnt==2){
+                        break
+                    }
+                }
+            }
+ 
+        }
+        
+        
+          print( "最後濾掉 剩下\(fooCards.count)張")
+         // print( fooCards)
+    }
+
+   return fooCards
+}
+
+//換牌
+//chgIndex 不可大於fromCards
+func cardsExchange(chgIndex:Int,changWay:String)->Void
+{
+print("=====換牌 func====")
+    var chgCard:Card
+
+    if changWay=="PC2PLAYER"{
+      
+        chgCard=Cards_PC[chgIndex] //抽換哪一張牌
+        chgCard.isUser.toggle()
+        if chgCard.point==0 {
+            print("電腦換給玩家的是鬼牌")}
+        else {
+         print("電腦換給玩家的點數是：   \(chgCard.point)")
+        }
+        
+        Cards_User
+        
+         Cards_PC.remove(at: chgIndex)//移掉
+         Cards_User.append(chgCard)//USER 多一張
+         Cards_User=card_filter(Cards_User)//玩家 多一張牌 ,並進行ＰＡＩＲ 檢查
+        if (Cards_User.count==1 ){
+            
+            if  Cards_User[0].cardType=="鬼牌"{
+                gameOver=true
+                print("電腦贏了")
+            }
+           
+          
+         }
+        else if (Cards_User.count==0 ) {
+            gameOver=true
+            print("玩家贏了")
+        }
+         else{
+         Cards_User.shuffle()//玩家 牌組洗牌
+         
+         }
+    }
+    else
+    {
+       
+        chgCard=Cards_User[chgIndex] //ＵＳＥＲ抽換哪一張牌
+        chgCard.isUser.toggle()
+        if chgCard.point==0 {
+            print("玩家換給電腦的是鬼牌") }
+        else {
+            print("玩家換給電腦的點數是：   \(chgCard.point)")
+        }
+        Cards_User.remove(at: chgIndex)//ＵＳＥＲ移掉
+        Cards_PC.append(chgCard)//PC 多一張卡
+        Cards_PC=card_filter(Cards_PC)//PC 多一張牌 ,並進行ＰＡＩＲ 檢查
+        if (  Cards_PC.count==1  )
+        {
+            if ( Cards_PC[0].cardType=="鬼牌"  ){
+            gameOver=true
+            print("玩家贏了")
+            }
+          
+        } else if (Cards_PC.count==0) {
+            gameOver=true
+            print("電腦贏了")
+        }
+        else {
+        Cards_PC.shuffle()//玩家 牌組洗牌
+       
+        }
+    }
+   
+    if(gameOver) {
+        print("game over ")
+//          print(Cards_User)
+//          print(Cards_PC)
+        
+    }
+    else
+    {
+        print("玩家牌面")
+        print(Cards_User)
+        print("電腦牌面")
+        print(Cards_PC)
+        
+    }
+    
+    
+   
+
+}
+
+
+
+
+
